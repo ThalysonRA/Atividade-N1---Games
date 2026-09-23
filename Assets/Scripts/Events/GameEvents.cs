@@ -7,10 +7,16 @@ namespace Labirinto.Events
     public static class GameEvents
     {
         public static event Action OnPlayerCaught;
+        public static event Action OnPelletCollected;
 
         public static void RaisePlayerCaught()
         {
             OnPlayerCaught?.Invoke();
+        }
+
+        public static void RaisePelletCollected()
+        {
+            OnPelletCollected?.Invoke();
         }
     }
 }

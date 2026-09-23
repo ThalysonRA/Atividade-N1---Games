@@ -11,6 +11,7 @@ namespace Labirinto.Enemies
     public class EnemyController : MonoBehaviour
     {
         [SerializeField] private float directionChangeInterval = 1.5f;
+        [SerializeField] private float detectionRadius = 6f;
 
         private IMover _mover;
         private IEnemyMovementStrategy _strategy;
@@ -18,7 +19,13 @@ namespace Labirinto.Enemies
         private void Awake()
         {
             _mover = GetComponent<IMover>();
-            _strategy = new RandomWanderStrategy(directionChangeInterval);
+
+            IEnemyMovementStrategy wander = new RandomWanderStrategy(directionChangeInterval);
+            var player = GameObject.FindGameObjectWithTag(GameTags.Player);
+
+            _strategy = player != null
+                ? new ChaseWhenNearStrategy(transform, player.transform, wander, detectionRadius)
+                : wander;
         }
 
         private void Update()

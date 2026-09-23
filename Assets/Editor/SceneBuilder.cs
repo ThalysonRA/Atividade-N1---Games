@@ -28,8 +28,12 @@ namespace Labirinto.EditorTools
 
             CreateGameManager();
             var maze = CreateMaze();
+            var reservedCells = new List<(int row, int col)> { PlayerSpawn };
+            reservedCells.AddRange(EnemySpawns(maze));
+
             CreatePlayer(maze);
             CreateEnemies(maze);
+            CreateLevelSystems(maze, reservedCells);
             SetupCamera(maze);
 
             EnsureFolder("Assets/Scenes");
@@ -60,6 +64,18 @@ namespace Labirinto.EditorTools
             go.AddComponent<GameManager>();
         }
 
+        private static readonly (int row, int col) PlayerSpawn = (1, 1);
+
+        private static (int row, int col)[] EnemySpawns(MazeBuilder maze)
+        {
+            return new[]
+            {
+                (1, maze.ColumnCount - 2),
+                (maze.RowCount - 2, 1),
+                (maze.RowCount - 2, maze.ColumnCount - 2)
+            };
+        }
+
         private static MazeBuilder CreateMaze()
         {
             var go = new GameObject("Maze");
@@ -68,11 +84,23 @@ namespace Labirinto.EditorTools
             return maze;
         }
 
+        private static void CreateLevelSystems(MazeBuilder maze, List<(int row, int col)> reservedCells)
+        {
+            var spawner = maze.gameObject.AddComponent<PelletSpawner>();
+            spawner.SetReservedCells(reservedCells);
+
+            var levelManagerGo = new GameObject("LevelManager");
+            levelManagerGo.AddComponent<LevelManager>();
+
+            var hudGo = new GameObject("Hud");
+            hudGo.AddComponent<HudDisplay>();
+        }
+
         private static void CreatePlayer(MazeBuilder maze)
         {
             var go = new GameObject("Player");
             go.tag = GameTags.Player;
-            go.transform.position = maze.GetWorldPosition(1, 1);
+            go.transform.position = maze.GetWorldPosition(PlayerSpawn.row, PlayerSpawn.col);
 
             var renderer = go.AddComponent<SpriteRenderer>();
             renderer.sprite = ProceduralSprite.CreateSolid(new Color(0.3f, 0.7f, 1f));
@@ -85,34 +113,17 @@ namespace Labirinto.EditorTools
             var collider = go.AddComponent<CircleCollider2D>();
             collider.radius = 0.4f;
 
-            go.AddComponent<RigidbodyMover>();
+            var mover = go.AddComponent<RigidbodyMover>();
+            mover.SetBaseSpeed(11f);
             go.AddComponent<PlayerController>();
             go.AddComponent<PlayerCollisionDetector>();
         }
 
         private static void CreateEnemies(MazeBuilder maze)
         {
-            (int row, int col)[] spawnPoints = { (1, 11), (11, 1) };
-
-            foreach (var point in spawnPoints)
+            foreach (var point in EnemySpawns(maze))
             {
-                var go = new GameObject("Enemy");
-                go.tag = GameTags.Enemy;
-                go.transform.position = maze.GetWorldPosition(point.row, point.col);
-
-                var renderer = go.AddComponent<SpriteRenderer>();
-                renderer.sprite = ProceduralSprite.CreateSolid(new Color(1f, 0.3f, 0.3f));
-                renderer.sortingOrder = 5;
-
-                var rb = go.AddComponent<Rigidbody2D>();
-                rb.gravityScale = 0f;
-                rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-
-                var collider = go.AddComponent<CircleCollider2D>();
-                collider.radius = 0.4f;
-
-                go.AddComponent<RigidbodyMover>();
-                go.AddComponent<EnemyController>();
+                EnemyFactory.Create(maze.GetWorldPosition(point.row, point.col), 9.5f, EnemyFactory.DefaultColor);
             }
         }
 
@@ -123,7 +134,7 @@ namespace Labirinto.EditorTools
 
             var cam = go.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 7f;
+            cam.orthographicSize = Mathf.Max(maze.RowCount, maze.ColumnCount) * maze.CellSize * 0.55f;
             cam.backgroundColor = new Color(0.08f, 0.08f, 0.12f);
 
             go.transform.position = maze.GetCenterPosition() + new Vector3(0f, 0f, -10f);

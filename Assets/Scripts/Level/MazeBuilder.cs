@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Labirinto.Common;
 
@@ -5,12 +6,14 @@ namespace Labirinto.Level
 {
     // Unica responsabilidade: instanciar as paredes fisicas a partir de MazeLayout
     // e expor conversao de celula -> posicao no mundo para quem precisar (player,
-    // inimigos, camera, background).
+    // inimigos, camera, background). Tambem permite retintar as paredes (usado
+    // pelo LevelManager para mudar a cor do mapa a cada fase).
     public class MazeBuilder : MonoBehaviour
     {
         [SerializeField] private float cellSize = 1f;
         [SerializeField] private Color wallColor = new Color(0.2f, 0.2f, 0.28f);
 
+        private readonly List<SpriteRenderer> _wallRenderers = new List<SpriteRenderer>();
         private Sprite _wallSprite;
 
         private void Awake()
@@ -20,7 +23,7 @@ namespace Labirinto.Level
 
         private void Build()
         {
-            _wallSprite = ProceduralSprite.CreateSolid(wallColor);
+            _wallSprite = ProceduralSprite.CreateSolid(Color.white);
 
             int[,] grid = MazeLayout.Grid;
             int rows = grid.GetLength(0);
@@ -47,9 +50,20 @@ namespace Labirinto.Level
 
             var renderer = wall.AddComponent<SpriteRenderer>();
             renderer.sprite = _wallSprite;
+            renderer.color = wallColor;
+            _wallRenderers.Add(renderer);
 
             var collider = wall.AddComponent<BoxCollider2D>();
             collider.size = Vector2.one * cellSize;
+        }
+
+        public void SetWallColor(Color color)
+        {
+            wallColor = color;
+            foreach (var renderer in _wallRenderers)
+            {
+                if (renderer != null) renderer.color = color;
+            }
         }
 
         public Vector3 GetWorldPosition(int row, int col)
