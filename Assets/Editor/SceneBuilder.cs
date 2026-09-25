@@ -114,7 +114,7 @@ namespace Labirinto.EditorTools
             collider.radius = 0.4f;
 
             var mover = go.AddComponent<RigidbodyMover>();
-            mover.SetBaseSpeed(11f);
+            mover.SetBaseSpeed(13f);
             go.AddComponent<PlayerController>();
             go.AddComponent<PlayerCollisionDetector>();
         }
