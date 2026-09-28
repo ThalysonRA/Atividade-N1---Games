@@ -5,11 +5,11 @@ namespace Labirinto.Level
     // EnemyController (Open/Closed).
     public static class MazeLayout
     {
-        public const int Rows = 19;
-        public const int Columns = 23;
+        public const int Rows = 27;
+        public const int Columns = 33;
 
         private const int Seed = 12345;
-        private const float ExtraOpenChance = 0.12f;
+        private const float ExtraOpenChance = 0.2f;
 
         private static int[,] _grid;
 
